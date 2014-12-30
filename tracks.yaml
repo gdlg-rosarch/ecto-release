@@ -67,6 +67,8 @@ tracks:
     - git-bloom-generate -y rosrelease :{ros_distro} --source upstream -i :{release_inc}
     - git-bloom-generate -y rosdebian --prefix release/:{ros_distro} :{ros_distro}
       -i :{release_inc}
+    - git-bloom-generate -y rosrpm --prefix release/:{ros_distro} :{ros_distro} -i
+      :{release_inc}
     devel_branch: null
     last_version: 0.6.7
     name: upstream
@@ -76,5 +78,5 @@ tracks:
     release_tag: :{version}
     ros_distro: indigo
     vcs_type: git
-    vcs_uri: /home/vrabaud/workspace/recognition_kitchen/src/ecto
+    vcs_uri: https://github.com/plasmodic/ecto.git
     version: :{auto}
