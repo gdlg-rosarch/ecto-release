@@ -28,6 +28,7 @@
 ectomodule(ecto_test
   Accumulator.cpp
   Add.cpp
+  BreakEveryN.cpp
   BpObjectToCellPtr.cpp
   CantCallMeFromTwoThreads.cpp
   ConfigureCalledOnce.cpp
