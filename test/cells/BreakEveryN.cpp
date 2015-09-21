@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Industrial Perception, Inc.
+ * Copyright (c) 2015, Michael 'v4hn' Goerner
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -10,10 +10,9 @@
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
  *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the Industrial Perception, Inc. nor the
- *       names of its contributors may be used to endorse or promote
- *       products derived from this software without specific prior
- *       written permission.
+ *     * Neither the name of the Willow Garage, Inc. nor the names of its
+ *       contributors may be used to endorse or promote products derived from
+ *       this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -27,23 +26,45 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#pragma once
-#include <cstddef>
 
-namespace ecto {
-namespace graph {
+#include <ecto/ecto.hpp>
+#include <ecto/registry.hpp>
 
-class element
+using ecto::tendrils;
+namespace ecto
 {
-public:
-  element() : tick_(0) {}
+  struct BreakEveryN
+  {
+    static void declare_params(ecto::tendrils& p)
+    {
+      p.declare(&BreakEveryN::n_, "n", "Break on every nth process.", 1);
+    }
 
-  std::size_t tick() const { return tick_; }
-  void inc_tick() { ++tick_; }
-  void reset_tick() { tick_ = 0; }
-private:
-  std::size_t tick_;
-};
+    static void declare_io(const ecto::tendrils& parameters, ecto::tendrils& inputs, ecto::tendrils& outputs)
+    {
+      inputs.declare<tendril::none>("in", "Any input");
+      outputs.declare("out", inputs["in"]);
+    }
 
-} // End of namespace graph.
-} // End of namespace ecto.
+    void configure(const tendrils& p, const tendrils& i, const tendrils& o)
+    {
+      i_ = 0;
+    }
+
+    int process(const tendrils& inputs, const tendrils& outputs)
+    {
+      if( ++i_ >= *n_ ){
+         i_ = 0;
+         return ecto::BREAK;
+      }
+      return ecto::OK;
+    }
+
+    size_t i_;
+
+    ecto::spore<size_t> n_;
+  };
+}
+
+ECTO_CELL(ecto_test, ecto::BreakEveryN, "BreakEveryN", "Pass on a values but break every Nth iteration.");
+

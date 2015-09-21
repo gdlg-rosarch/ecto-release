@@ -1,5 +1,7 @@
+#!/usr/bin/env python
 #
-# Copyright (c) 2011, Willow Garage, Inc.
+# Copyright (c) 2015, Michael 'v4hn' Goerner
+#
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -24,70 +26,27 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-#
-#this helps with visual studio projects.
-file(GLOB ecto_HEADERS
-  ${CMAKE_SOURCE_DIR}/include/ecto/*.hpp
-  ${CMAKE_SOURCE_DIR}/include/ecto/*/*.hpp
-  )
-source_group("Headers" FILES ${ecto_HEADERS})
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+import ecto
+import ecto.ecto_test as ecto_test
 
-add_library(ecto SHARED
-  abi.cpp
-  cell.cpp
-  edge.cpp
-  tendril.cpp
-  tendrils.cpp
-  plasm.cpp
-  plasm/impl.cpp
-  util.cpp
-  log.cpp
-  except.cpp
-  parameters.cpp
-  profile.cpp
-  python.cpp
-  registry.cpp
-  rethrow.cpp
-  serialization.cpp
-  scheduler.cpp
-  graph/utilities.cpp
-  strand.cpp
-  test.cpp
-  time.cpp
-  ${ecto_HEADERS}
-  )
+# run the generator 10 times
+gen = ecto_test.Generate(start= 0, step= 1, stop= 9)
 
-target_link_libraries(ecto
-  ${Boost_LIBRARIES}
-  ${catkin_LIBRARIES}
-  ${PYTHON_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT}
-)
+# break on every second iteration
+breaker= ecto_test.BreakEveryN(n= 2)
 
-set_source_files_properties(log.cpp
-  PROPERTIES
-  COMPILE_FLAGS -DSOURCE_DIR=\\"${ecto_SOURCE_DIR}\\"
-  )
+cnt = ecto.Counter()
 
-if(UNIX)
-  set_target_properties(ecto PROPERTIES
-    COMPILE_FLAGS "${FASTIDIOUS_FLAGS}"
-    VERSION ${ecto_VERSION}
-    SOVERSION ${ECTO_SOVERSION}
-    )
-elseif(WIN32)
-  set_target_properties(ecto PROPERTIES
-    COMPILE_FLAGS "${FASTIDIOUS_FLAGS}"
-    VERSION ${ecto_VERSION}
-    SOVERSION ${ECTO_SOVERSION}
-    OUTPUT_NAME ecto_cpp
-    )
-endif()
+plasm = ecto.Plasm()
+plasm.connect([
+  gen[:] >> breaker[:],
+  breaker[:] >> cnt[:]
+])
 
-#install the main shared lib
-install(TARGETS ecto
-        DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        COMPONENT main
-)
+plasm.execute(niter= 0)
+
+# as cnt depends on breaker it will only be processed every second iteration
+result = cnt.outputs.count
+print "Counter ran " + str(result) + " times"
+assert(result == 5)
